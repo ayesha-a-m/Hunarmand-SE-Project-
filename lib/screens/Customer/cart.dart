@@ -73,6 +73,7 @@ class CartScreen extends StatefulWidget {
 
 class _CartScreenState extends State<CartScreen> {
   final CartManager _cart = CartManager();
+  String _selectedPayment = '';
 
   static const Map<String, Map<String, String>> _translations = {
     'English': {
@@ -140,28 +141,265 @@ class _CartScreenState extends State<CartScreen> {
       widget.selectedLanguage == 'Punjabi';
 
   // ── WhatsApp Checkout ─────────────────────────────────────
-  Future<void> _checkoutViaWhatsApp() async {
+  // ── Payment Sheet ─────────────────────────────────────────
+  void _showCheckoutSheet() {
     if (_cart.items.isEmpty) return;
+    setState(() => _selectedPayment = '');
 
-    final buffer = StringBuffer();
-    buffer.writeln('Hello! I would like to place an order:');
-    buffer.writeln('');
-    for (final item in _cart.items) {
-      buffer.writeln(
-          '• ${item.product['name']} x${item.quantity} — ${item.product['price']}');
+    final methods = [
+      {
+        'id': 'cod',
+        'icon': Icons.money_outlined,
+        'color': const Color(0xFF7A9B76),
+        'label': 'Cash on Delivery',
+        'desc': 'Pay when your order arrives',
+      },
+      {
+        'id': 'jazzcash',
+        'icon': Icons.account_balance_wallet_outlined,
+        'color': const Color(0xFFD9534F),
+        'label': 'JazzCash',
+        'desc': 'Pay via JazzCash mobile wallet',
+      },
+      {
+        'id': 'easypaisa',
+        'icon': Icons.account_balance_wallet_outlined,
+        'color': const Color(0xFF5CB85C),
+        'label': 'Easypaisa',
+        'desc': 'Pay via Easypaisa mobile wallet',
+      },
+      {
+        'id': 'whatsapp',
+        'icon': Icons.chat_outlined,
+        'color': const Color(0xFF25D366),
+        'label': 'WhatsApp + COD',
+        'desc': 'Confirm via WhatsApp, pay on delivery',
+      },
+    ];
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.white,
+      shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
+      builder: (_) => StatefulBuilder(
+        builder: (ctx, setModalState) => Padding(
+          padding: EdgeInsets.only(
+              bottom: MediaQuery.of(context).viewInsets.bottom),
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 16, 20, 28),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Handle
+                Center(
+                  child: Container(
+                    width: 40, height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2),
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text('Payment Method',
+                    style: TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold)),
+                const SizedBox(height: 4),
+                const Text('Select how you want to pay',
+                    style: TextStyle(fontSize: 13, color: Colors.grey)),
+                const SizedBox(height: 20),
+
+                // Total summary
+                Container(
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F5EF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text('Total',
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.w600)),
+                      Text('Rs. ${_cart.totalPrice}',
+                          style: const TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF7A9B76))),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 20),
+
+                // Payment options
+                ...methods.map((m) {
+                  final id = m['id'] as String;
+                  final color = m['color'] as Color;
+                  final isSelected = _selectedPayment == id;
+                  return GestureDetector(
+                    onTap: () {
+                      setModalState(() => _selectedPayment = id);
+                      setState(() => _selectedPayment = id);
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 200),
+                      margin: const EdgeInsets.only(bottom: 12),
+                      padding: const EdgeInsets.all(14),
+                      decoration: BoxDecoration(
+                        color: isSelected
+                            ? color.withValues(alpha: 0.07)
+                            : Colors.white,
+                        border: Border.all(
+                          color: isSelected ? color : Colors.grey.shade200,
+                          width: isSelected ? 2 : 1,
+                        ),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 44, height: 44,
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(m['icon'] as IconData,
+                                color: color, size: 22),
+                          ),
+                          const SizedBox(width: 14),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(m['label'] as String,
+                                    style: TextStyle(
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w600,
+                                        color: isSelected
+                                            ? color
+                                            : Colors.black87)),
+                                const SizedBox(height: 2),
+                                Text(m['desc'] as String,
+                                    style: const TextStyle(
+                                        fontSize: 11, color: Colors.grey)),
+                              ],
+                            ),
+                          ),
+                          // Radio dot
+                          Container(
+                            width: 20, height: 20,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: isSelected
+                                    ? color
+                                    : Colors.grey.shade300,
+                                width: 2,
+                              ),
+                            ),
+                            child: isSelected
+                                ? Center(
+                                    child: Container(
+                                      width: 10, height: 10,
+                                      decoration: BoxDecoration(
+                                          shape: BoxShape.circle,
+                                          color: color),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+
+                const SizedBox(height: 8),
+
+                // Place Order button
+                SizedBox(
+                  width: double.infinity,
+                  height: 52,
+                  child: ElevatedButton(
+                    onPressed: () => _placeOrder(ctx),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF7A9B76),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      elevation: 0,
+                    ),
+                    child: const Text('Place Order',
+                        style: TextStyle(
+                            fontSize: 16, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Place Order ───────────────────────────────────────────
+  Future<void> _placeOrder(BuildContext sheetCtx) async {
+    if (_selectedPayment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Text('Please select a payment method'),
+          backgroundColor: Colors.redAccent,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+      return;
     }
-    buffer.writeln('');
-    buffer.writeln('Total: Rs. ${_cart.totalPrice}');
 
-    final message = Uri.encodeComponent(buffer.toString());
-    // Use seller's number from first item, or a default store number
-    final phone =
-        _cart.items.first.product['phone'] ?? '+923001234567';
-    final uri = Uri.parse('https://wa.me/$phone?text=$message');
+    Navigator.pop(sheetCtx);
 
-    if (await canLaunchUrl(uri)) {
-      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    if (_selectedPayment == 'whatsapp') {
+      final buffer = StringBuffer();
+      buffer.writeln('Hello! I would like to place an order:');
+      buffer.writeln('');
+      for (final item in _cart.items) {
+        buffer.writeln(
+            '• ${item.product['name']} x${item.quantity} — ${item.product['price']}');
+      }
+      buffer.writeln('');
+      buffer.writeln('Total: Rs. ${_cart.totalPrice}');
+      buffer.writeln('Payment: Cash on Delivery (WhatsApp confirmation)');
+      final message = Uri.encodeComponent(buffer.toString());
+      final phone = _cart.items.first.product['phone'] ?? '+923001234567';
+      final uri = Uri.parse('https://wa.me/$phone?text=$message');
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      }
     }
+
+    setState(() => _cart.clearCart());
+
+    // ignore: use_build_context_synchronously
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: const [
+            Icon(Icons.check_circle_outline, color: Colors.white, size: 20),
+            SizedBox(width: 8),
+            Text('Order placed successfully!'),
+          ],
+        ),
+        backgroundColor: const Color(0xFF7A9B76),
+        duration: const Duration(seconds: 3),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10)),
+      ),
+    );
   }
 
   // ── Clear Cart Confirmation ───────────────────────────────
@@ -296,7 +534,7 @@ class _CartScreenState extends State<CartScreen> {
         shrinkWrap: true,
         physics: const NeverScrollableScrollPhysics(),
         itemCount: _cart.items.length,
-        separatorBuilder: (_, __) =>
+        separatorBuilder: (_, _) =>
             Divider(color: Colors.grey.shade100, height: 1),
         itemBuilder: (context, index) =>
             _buildCartItemRow(index),
@@ -327,7 +565,7 @@ class _CartScreenState extends State<CartScreen> {
               child: Image.network(
                 product['image'] ?? '',
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: Colors.grey.shade200,
                   child: const Icon(Icons.image_not_supported,
                       size: 24, color: Colors.grey),
@@ -525,8 +763,8 @@ class _CartScreenState extends State<CartScreen> {
             width: double.infinity,
             height: 50,
             child: ElevatedButton.icon(
-              onPressed: _checkoutViaWhatsApp,
-              icon: const Icon(Icons.chat_bubble_outline, size: 18),
+              onPressed: _showCheckoutSheet,
+              icon: const Icon(Icons.payment_outlined, size: 18),
               label: Text(
                 t('checkout'),
                 style: const TextStyle(
@@ -544,15 +782,7 @@ class _CartScreenState extends State<CartScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 10),
-          Center(
-            child: Text(
-              t('whatsappNote'),
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  fontSize: 11, color: Colors.grey),
-            ),
-          ),
+
         ],
       ),
     );

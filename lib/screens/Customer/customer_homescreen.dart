@@ -1,19 +1,21 @@
 import 'product_detail.dart';
 import 'cart.dart';
 import 'courses.dart';
+import 'order_history.dart';
 import '../landing_screen.dart';
 import 'package:flutter/material.dart';
 
 // ── Translations Map ─────────────────────────────────────────────────────────
 const Map<String, Map<String, String>> _translations = {
   'English': {
-    'appName': 'Artisan Marketplace',
+    'appName': 'Hunarmand',
     'subtitle': 'Discover handmade treasures',
     'search': 'Search products...',
     'addToCart': 'Add to Cart',
     'browseProducts': 'Browse Products',
     'courses': 'Courses',
     'switchToSeller': 'Switch to Seller',
+    'myOrders': 'My Orders',
     'all': 'All',
     'textiles': 'Textiles',
     'jewelry': 'Jewelry',
@@ -29,6 +31,7 @@ const Map<String, Map<String, String>> _translations = {
     'browseProducts': 'مصنوعات دیکھیں',
     'courses': 'کورسز',
     'switchToSeller': 'بیچنے والے پر جائیں',
+    'myOrders': 'میرے آرڈر',
     'all': 'سب',
     'textiles': 'کپڑے',
     'jewelry': 'زیورات',
@@ -44,6 +47,7 @@ const Map<String, Map<String, String>> _translations = {
     'browseProducts': 'ਉਤਪਾਦ ਵੇਖੋ',
     'courses': 'ਕੋਰਸ',
     'switchToSeller': 'ਵੇਚਣ ਵਾਲੇ ਕੋਲ ਜਾਓ',
+    'myOrders': 'ਮੇਰੇ ਆਰਡਰ',
     'all': 'ਸਭ',
     'textiles': 'ਕੱਪੜੇ',
     'jewelry': 'ਗਹਿਣੇ',
@@ -59,6 +63,7 @@ const Map<String, Map<String, String>> _translations = {
     'browseProducts': 'شيون ڏسو',
     'courses': 'ڪورس',
     'switchToSeller': 'وڪرو ڪندڙ ڏانهن وڃو',
+    'myOrders': 'منهنجا آرڊر',
     'all': 'سڀ',
     'textiles': 'ڪپڙو',
     'jewelry': 'زيور',
@@ -248,7 +253,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: _selectedLanguage != 'English'
-                    ? Colors.white.withOpacity(0.25)
+                    ? Colors.white.withValues(alpha: 0.25)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
@@ -328,7 +333,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 12),
                   color: isSelected
-                      ? const Color(0xFF7A9B76).withOpacity(0.1)
+                      ? const Color(0xFF7A9B76).withValues(alpha: 0.1)
                       : Colors.transparent,
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -410,7 +415,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         padding:
             const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         itemCount: _categoryKeys.length,
-        separatorBuilder: (_, __) => const SizedBox(width: 8),
+        separatorBuilder: (_, _) => const SizedBox(width: 8),
         itemBuilder: (context, index) {
           final key = _categoryKeys[index];
           final isSelected = key == _selectedCategory;
@@ -482,7 +487,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 6,
               offset: const Offset(0, 2),
             ),
@@ -501,7 +506,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
               child: Image.network(
                 product['image']!,
                 fit: BoxFit.cover,
-                errorBuilder: (_, __, ___) => Container(
+                errorBuilder: (_, _, _) => Container(
                   color: Colors.grey.shade200,
                   child: const Icon(Icons.image_not_supported,
                       color: Colors.grey),
@@ -599,6 +604,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     final items = [
       {'icon': Icons.shopping_bag_outlined, 'key': 'browseProducts'},
       {'icon': Icons.school_outlined, 'key': 'courses'},
+      {'icon': Icons.receipt_long_outlined, 'key': 'myOrders'},
       {'icon': Icons.swap_horiz_outlined, 'key': 'switchToSeller'},
     ];
 
@@ -607,7 +613,7 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
         color: Colors.white,
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.08),
+            color: Colors.black.withValues(alpha: 0.08),
             blurRadius: 10,
             offset: const Offset(0, -2),
           ),
@@ -632,6 +638,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                       ),
                     );
                   } else if (index == 2) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => OrderHistoryScreen(
+                          selectedLanguage: _selectedLanguage,
+                        ),
+                      ),
+                    );
+                  } else if (index == 3) {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
