@@ -1,0 +1,121 @@
+import 'dart:async';
+import 'package:flutter/material.dart';
+import 'login_screen.dart';
+
+class SplashScreen extends StatefulWidget {
+  const SplashScreen({super.key});
+
+  @override
+  State<SplashScreen> createState() => _SplashScreenState();
+}
+
+class _SplashScreenState extends State<SplashScreen> {
+
+  @override
+  void initState() {
+    super.initState();
+
+    Timer(const Duration(seconds: 3), () {
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: const Color(0xFFEDEDED), // soft grey
+      body: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+
+          const Spacer(),
+
+          // 🔵 LOGO (placeholder for now)
+          Container(
+            width: 120,
+            height: 120,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              border: Border.all(color: Color(0xFF6F8F72), width: 2),
+            ),
+            child: const Center(
+              child: Icon(Icons.spa, size: 50, color: Color(0xFF6F8F72)),
+            ),
+          ),
+
+          const SizedBox(height: 25),
+
+          // 📝 Title
+          const Text(
+            "Artisan Marketplace",
+            style: TextStyle(
+              fontSize: 26,
+              fontWeight: FontWeight.w500,
+              color: Color(0xFF5A6E5A),
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // 🌐 Urdu text
+          const Text(
+            "دستکار بازار",
+            style: TextStyle(
+              fontSize: 16,
+              color: Color(0xFF6F8F72),
+            ),
+          ),
+
+          const Spacer(),
+
+          // 📌 Tagline
+          const Text(
+            "Empowering Women Artisans Across Pakistan",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey,
+            ),
+          ),
+
+          const SizedBox(height: 10),
+
+          // ⚪ Dots indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: const [
+              Dot(active: true),
+              Dot(active: false),
+              Dot(active: false),
+            ],
+          ),
+
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+}
+
+// 🔘 Dot widget (clean reusable)
+class Dot extends StatelessWidget {
+  final bool active;
+
+  const Dot({super.key, required this.active});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 4),
+      width: 6,
+      height: 6,
+      decoration: BoxDecoration(
+        color: active ? Color(0xFF6F8F72) : Colors.grey.shade400,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+}
