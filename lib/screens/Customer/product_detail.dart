@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import 'Cart.dart';
+import '../Cart.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, String> product;

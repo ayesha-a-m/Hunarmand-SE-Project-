@@ -1,5 +1,7 @@
 import 'product_detail.dart';
 import 'cart.dart';
+import 'courses.dart';
+import '../landing_screen.dart';
 import 'package:flutter/material.dart';
 
 // ── Translations Map ─────────────────────────────────────────────────────────
@@ -81,6 +83,8 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   String _selectedCategory = 'all';
   String _selectedLanguage = 'English';
   bool _showLanguageDropdown = false;
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   final List<String> _categoryKeys = [
     'all',
@@ -136,6 +140,12 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     },
   ];
 
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
+
   // ── Helpers ───────────────────────────────────────────────
   String t(String key) =>
       _translations[_selectedLanguage]?[key] ??
@@ -144,10 +154,14 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
   bool get isRtl => _rtlLanguages.contains(_selectedLanguage);
 
   List<Map<String, String>> get _filteredProducts {
-    if (_selectedCategory == 'all') return _products;
-    return _products
-        .where((p) => p['categoryKey'] == _selectedCategory)
-        .toList();
+    return _products.where((p) {
+      final matchCat = _selectedCategory == 'all' ||
+          p['categoryKey'] == _selectedCategory;
+      final matchSearch = _searchQuery.isEmpty ||
+          (p['name'] ?? '').toLowerCase().contains(_searchQuery.toLowerCase()) ||
+          (p['seller'] ?? '').toLowerCase().contains(_searchQuery.toLowerCase());
+      return matchCat && matchSearch;
+    }).toList();
   }
 
   // ── Build ─────────────────────────────────────────────────
@@ -359,18 +373,25 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 14, 16, 6),
       child: TextField(
-        textDirection:
-            isRtl ? TextDirection.rtl : TextDirection.ltr,
+        controller: _searchController,
+        textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+        onChanged: (val) => setState(() => _searchQuery = val),
         decoration: InputDecoration(
           hintText: t('search'),
-          hintStyle:
-              const TextStyle(color: Colors.grey, fontSize: 14),
-          prefixIcon:
-              const Icon(Icons.search, color: Colors.grey, size: 20),
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 14),
+          prefixIcon: const Icon(Icons.search, color: Colors.grey, size: 20),
+          suffixIcon: _searchQuery.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.clear, color: Colors.grey, size: 18),
+                  onPressed: () {
+                    _searchController.clear();
+                    setState(() => _searchQuery = '');
+                  },
+                )
+              : null,
           filled: true,
           fillColor: Colors.white,
-          contentPadding:
-              const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(30),
             borderSide: BorderSide.none,
@@ -541,15 +562,15 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
                     'category': t(product['categoryKey']!),
                   });
                   ScaffoldMessenger.of(context).showSnackBar(
-                   SnackBar(
-  content: const Text("Added to cart"),
-  backgroundColor: const Color(0xFF7A9B76),
-  behavior: SnackBarBehavior.floating,
-  shape: RoundedRectangleBorder(
-    borderRadius: BorderRadius.circular(10),
-  ),
-  duration: const Duration(seconds: 2),
-)
+                    SnackBar(
+                      content: Text('${product['name']} added to cart!'),
+                      backgroundColor: const Color(0xFF7A9B76),
+                      duration: const Duration(seconds: 2),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
                   );
                 },
                 icon: const Icon(Icons.shopping_cart_outlined,
@@ -599,8 +620,28 @@ class _CustomerHomeScreenState extends State<CustomerHomeScreen> {
             final isSelected = _selectedNavIndex == index;
             return Expanded(
               child: GestureDetector(
-                onTap: () =>
-                    setState(() => _selectedNavIndex = index),
+                onTap: () {
+                  if (index == 1) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => CoursesScreen(
+                          selectedLanguage: _selectedLanguage,
+                          onBrowseProducts: () => Navigator.pop(context),
+                        ),
+                      ),
+                    );
+                  } else if (index == 2) {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const LandingScreen(),
+                      ),
+                    );
+                  } else {
+                    setState(() => _selectedNavIndex = index);
+                  }
+                },
                 behavior: HitTestBehavior.opaque,
                 child: Padding(
                   padding:
