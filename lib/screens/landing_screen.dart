@@ -27,7 +27,7 @@ class LandingScreen extends StatelessWidget {
                       color: const Color(0xFF7A9B76), width: 2.5),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF7A9B76).withOpacity(0.15),
+                      color: const Color(0xFF7A9B76).withValues(alpha: 0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -40,7 +40,7 @@ class LandingScreen extends StatelessWidget {
 
               // ── Title ────────────────────────────────────
               const Text(
-                'Artisan Marketplace',
+                'Hunarmand',
                 style: TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
@@ -166,7 +166,7 @@ class _RoleCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
+              color: Colors.black.withValues(alpha: 0.06),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),

@@ -47,7 +47,7 @@ class _SplashScreenState extends State<SplashScreen> {
           const SizedBox(height: 25),
 
           const Text(
-            "Artisan Marketplace",
+            "Hunarmand",
             style: TextStyle(
               fontSize: 26,
               fontWeight: FontWeight.w500,

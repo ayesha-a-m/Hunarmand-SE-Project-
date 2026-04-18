@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../landing_screen.dart';
+
 // ─────────────────────────────────────────────────────────────────────────────
 // Simple in-memory data models
 // ─────────────────────────────────────────────────────────────────────────────
@@ -73,6 +74,100 @@ class SellerDashboardScreen extends StatefulWidget {
 class _SellerDashboardScreenState extends State<SellerDashboardScreen>
     with SingleTickerProviderStateMixin {
   late TabController _tabController;
+  String _selectedLanguage = 'English';
+  bool _showLanguageDropdown = false;
+
+  // ── Translations ─────────────────────────────────────────
+  static const Map<String, Map<String, String>> _tr = {
+    'English': {
+      'dashboard': 'Seller Dashboard',
+      'subtitle': 'Manage your business and products',
+      'switchToCustomer': 'Switch to Customer',
+      'totalProducts': 'Total Products',
+      'pendingOrders': 'Pending Orders',
+      'totalRevenue': 'Total Revenue',
+      'manageProducts': 'Manage Products',
+      'manageCourses': 'Manage Courses',
+      'manageOrders': 'Manage Orders',
+      'yourProducts': 'Your Products',
+      'addProduct': '+ Add Product',
+      'yourCourses': 'Your Courses',
+      'addCourse': '+ Add Course',
+      'edit': 'Edit',
+      'delete': 'Delete',
+      'noProducts': 'No products yet',
+      'noCourses': 'No courses yet',
+      'noOrders': 'No orders yet',
+    },
+    'Urdu': {
+      'dashboard': 'بیچنے والے کا ڈیش بورڈ',
+      'subtitle': 'اپنا کاروبار اور مصنوعات منظم کریں',
+      'switchToCustomer': 'خریدار پر جائیں',
+      'totalProducts': 'کل مصنوعات',
+      'pendingOrders': 'زیر التواء آرڈر',
+      'totalRevenue': 'کل آمدنی',
+      'manageProducts': 'مصنوعات',
+      'manageCourses': 'کورسز',
+      'manageOrders': 'آرڈرز',
+      'yourProducts': 'آپ کی مصنوعات',
+      'addProduct': '+ مصنوع شامل کریں',
+      'yourCourses': 'آپ کے کورسز',
+      'addCourse': '+ کورس شامل کریں',
+      'edit': 'ترمیم',
+      'delete': 'حذف کریں',
+      'noProducts': 'ابھی کوئی مصنوعات نہیں',
+      'noCourses': 'ابھی کوئی کورس نہیں',
+      'noOrders': 'ابھی کوئی آرڈر نہیں',
+    },
+    'Punjabi': {
+      'dashboard': 'ਵੇਚਣ ਵਾਲੇ ਦਾ ਡੈਸ਼ਬੋਰਡ',
+      'subtitle': 'ਆਪਣਾ ਕਾਰੋਬਾਰ ਸੰਭਾਲੋ',
+      'switchToCustomer': 'ਖਰੀਦਦਾਰ ਕੋਲ ਜਾਓ',
+      'totalProducts': 'ਕੁੱਲ ਉਤਪਾਦ',
+      'pendingOrders': 'ਲੰਬਿਤ ਆਰਡਰ',
+      'totalRevenue': 'ਕੁੱਲ ਆਮਦਨ',
+      'manageProducts': 'ਉਤਪਾਦ',
+      'manageCourses': 'ਕੋਰਸ',
+      'manageOrders': 'ਆਰਡਰ',
+      'yourProducts': 'ਤੁਹਾਡੇ ਉਤਪਾਦ',
+      'addProduct': '+ ਉਤਪਾਦ ਜੋੜੋ',
+      'yourCourses': 'ਤੁਹਾਡੇ ਕੋਰਸ',
+      'addCourse': '+ ਕੋਰਸ ਜੋੜੋ',
+      'edit': 'ਸੋਧੋ',
+      'delete': 'ਮਿਟਾਓ',
+      'noProducts': 'ਅਜੇ ਕੋਈ ਉਤਪਾਦ ਨਹੀਂ',
+      'noCourses': 'ਅਜੇ ਕੋਈ ਕੋਰਸ ਨਹੀਂ',
+      'noOrders': 'ਅਜੇ ਕੋਈ ਆਰਡਰ ਨਹੀਂ',
+    },
+    'Sindhi': {
+      'dashboard': 'وڪرو ڪندڙ ڊيش بورڊ',
+      'subtitle': 'پنهنجو ڪاروبار سنڀاليو',
+      'switchToCustomer': 'خريدار ڏانهن وڃو',
+      'totalProducts': 'ڪل شيون',
+      'pendingOrders': 'زير التوا آرڊر',
+      'totalRevenue': 'ڪل آمدني',
+      'manageProducts': 'شيون',
+      'manageCourses': 'ڪورس',
+      'manageOrders': 'آرڊر',
+      'yourProducts': 'توهان جون شيون',
+      'addProduct': '+ شئي شامل ڪريو',
+      'yourCourses': 'توهان جا ڪورس',
+      'addCourse': '+ ڪورس شامل ڪريو',
+      'edit': 'سنواريو',
+      'delete': 'ختم ڪريو',
+      'noProducts': 'اڃا ڪا شئي ناهي',
+      'noCourses': 'اڃا ڪو ڪورس ناهي',
+      'noOrders': 'اڃا ڪو آرڊر ناهي',
+    },
+  };
+
+  String t(String key) =>
+      _tr[_selectedLanguage]?[key] ?? _tr['English']![key]!;
+
+  bool get isRtl =>
+      _selectedLanguage == 'Urdu' ||
+      _selectedLanguage == 'Sindhi' ||
+      _selectedLanguage == 'Punjabi';
 
   // Sample data
   final List<SellerProduct> _products = [
@@ -147,25 +242,110 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   // ── Build ────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFEDEDED),
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(context),
-            _buildStatsRow(),
-            _buildTabs(),
-            Expanded(
-              child: TabBarView(
-                controller: _tabController,
+    return Directionality(
+      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+      child: Scaffold(
+        backgroundColor: const Color(0xFFEDEDED),
+        body: SafeArea(
+          child: Stack(
+            children: [
+              Column(
                 children: [
-                  _buildManageProducts(),
-                  _buildManageCourses(),
-                  _buildManageOrders(),
+                  _buildHeader(context),
+                  _buildStatsRow(),
+                  _buildTabs(),
+                  Expanded(
+                    child: TabBarView(
+                      controller: _tabController,
+                      children: [
+                        _buildManageProducts(),
+                        _buildManageCourses(),
+                        _buildManageOrders(),
+                      ],
+                    ),
+                  ),
                 ],
               ),
-            ),
-          ],
+              if (_showLanguageDropdown)
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _showLanguageDropdown = false),
+                  child: Container(color: Colors.transparent),
+                ),
+              if (_showLanguageDropdown)
+                Positioned(
+                  top: 56,
+                  right: isRtl ? null : 90,
+                  left: isRtl ? 90 : null,
+                  child: _buildLanguageDropdown(),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  // ── Language Dropdown ────────────────────────────────────
+  Widget _buildLanguageDropdown() {
+    final languages = [
+      {'key': 'English', 'native': 'English'},
+      {'key': 'Urdu', 'native': 'اردو'},
+      {'key': 'Punjabi', 'native': 'ਪੰਜਾਬੀ'},
+      {'key': 'Sindhi', 'native': 'سنڌي'},
+    ];
+    return Directionality(
+      textDirection: TextDirection.ltr,
+      child: Material(
+        elevation: 8,
+        borderRadius: BorderRadius.circular(12),
+        color: Colors.white,
+        child: Container(
+          width: 200,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: languages.map((lang) {
+              final isSelected = _selectedLanguage == lang['key'];
+              return InkWell(
+                onTap: () => setState(() {
+                  _selectedLanguage = lang['key']!;
+                  _showLanguageDropdown = false;
+                }),
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                      horizontal: 20, vertical: 12),
+                  color: isSelected
+                      ? const Color(0xFF7A9B76).withValues(alpha: 0.1)
+                      : Colors.transparent,
+                  child: Row(
+                    mainAxisAlignment:
+                        MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(lang['key']!,
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: isSelected
+                                  ? const Color(0xFF7A9B76)
+                                  : Colors.black87,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal)),
+                      Text(lang['native']!,
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: isSelected
+                                  ? const Color(0xFF7A9B76)
+                                  : Colors.black54,
+                              fontWeight: isSelected
+                                  ? FontWeight.w600
+                                  : FontWeight.normal)),
+                    ],
+                  ),
+                ),
+              );
+            }).toList(),
+          ),
         ),
       ),
     );
@@ -188,31 +368,45 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             child: const Icon(Icons.spa, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 10),
-          const Expanded(
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Seller Dashboard',
-                    style: TextStyle(
+                Text(t('dashboard'),
+                    style: const TextStyle(
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16)),
-                Text('Manage your business and products',
+                Text(t('subtitle'),
                     style:
-                        TextStyle(color: Colors.white70, fontSize: 11)),
+                        const TextStyle(color: Colors.white70, fontSize: 11)),
               ],
             ),
           ),
-          const Icon(Icons.translate, color: Colors.white, size: 20),
+          GestureDetector(
+            onTap: () => setState(
+                () => _showLanguageDropdown = !_showLanguageDropdown),
+            child: Container(
+              padding: const EdgeInsets.all(6),
+              decoration: BoxDecoration(
+                color: _selectedLanguage != 'English'
+                    ? Colors.white.withValues(alpha: 0.25)
+                    : Colors.transparent,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Icon(Icons.translate,
+                  color: Colors.white, size: 20),
+            ),
+          ),
           const SizedBox(width: 8),
           GestureDetector(
-            onTap: () {
-    Navigator.pushAndRemoveUntil(
-      context,
-      MaterialPageRoute(builder: (_) => const LandingScreen()),
-      (route) => false,
-    );
-  },
+            onTap: () => Navigator.pushAndRemoveUntil(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const LandingScreen(),
+              ),
+              (route) => false,
+            ),
             child: Container(
               padding:
                   const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
@@ -220,16 +414,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
               ),
-              child: const Text(
-                'Switch to Customer',
-                style: TextStyle(
+              child: Text(
+                t('switchToCustomer'),
+                style: const TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
                   color: Color(0xFF7A9B76),
                 ),
               ),
             ),
-            
           ),
         ],
       ),
@@ -243,15 +436,15 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
       padding: const EdgeInsets.all(12),
       child: Column(
         children: [
-          _statTile('Total Products', '${_products.length}',
+          _statTile(t('totalProducts'), '${_products.length}',
               Icons.inventory_2_outlined),
           const SizedBox(height: 8),
-          _statTile('Pending Orders',
+          _statTile(t('pendingOrders'),
               '${_orders.where((o) => o.status == 'Pending').length}',
               Icons.shopping_cart_outlined),
           const SizedBox(height: 8),
           _statTile(
-              'Total Revenue', 'Rs. $_totalRevenue', Icons.attach_money),
+              t('totalRevenue'), 'Rs. $_totalRevenue', Icons.attach_money),
         ],
       ),
     );
@@ -300,10 +493,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         labelStyle: const TextStyle(
             fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 13),
-        tabs: const [
-          Tab(text: 'Manage Products'),
-          Tab(text: 'Manage Courses'),
-          Tab(text: 'Manage Orders'),
+        tabs: [
+          Tab(text: t('manageProducts')),
+          Tab(text: t('manageCourses')),
+          Tab(text: t('manageOrders')),
         ],
       ),
     );
@@ -320,14 +513,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Your Products',
-                  style: TextStyle(
+              Text(t('yourProducts'),
+                  style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 onPressed: () => _openAddProductSheet(),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add Product',
-                    style: TextStyle(fontSize: 13)),
+                label: Text(t('addProduct').replaceFirst('+ ', ''),
+                    style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7A9B76),
                   foregroundColor: Colors.white,
@@ -343,7 +536,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         ),
         Expanded(
           child: _products.isEmpty
-              ? _emptyState('No products yet', Icons.inventory_2_outlined)
+              ? _emptyState(t('noProducts'), Icons.inventory_2_outlined)
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _products.length,
@@ -363,7 +556,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],
@@ -378,7 +571,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
               aspectRatio: 2.2,
               child: p.imageUrl.isNotEmpty
                   ? Image.network(p.imageUrl, fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) =>
+                      errorBuilder: (_, _, _) =>
                           _imagePlaceholder())
                   : _imagePlaceholder(),
             ),
@@ -416,7 +609,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text('Edit'),
+                        child: Text(t('edit')),
                       ),
                     ),
                     const SizedBox(width: 10),
@@ -433,7 +626,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                           shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(8)),
                         ),
-                        child: const Text('Delete'),
+                        child: Text(t('delete')),
                       ),
                     ),
                   ],
@@ -457,14 +650,14 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           child: Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              const Text('Your Courses',
-                  style: TextStyle(
+              Text(t('yourCourses'),
+                  style: const TextStyle(
                       fontSize: 18, fontWeight: FontWeight.bold)),
               ElevatedButton.icon(
                 onPressed: () => _openAddCourseSheet(),
                 icon: const Icon(Icons.add, size: 16),
-                label: const Text('Add Course',
-                    style: TextStyle(fontSize: 13)),
+                label: Text(t('addCourse').replaceFirst('+ ', ''),
+                    style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7A9B76),
                   foregroundColor: Colors.white,
@@ -480,7 +673,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         ),
         Expanded(
           child: _courses.isEmpty
-              ? _emptyState('No courses yet', Icons.school_outlined)
+              ? _emptyState(t('noCourses'), Icons.school_outlined)
               : ListView.builder(
                   padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                   itemCount: _courses.length,
@@ -517,7 +710,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],
@@ -650,7 +843,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   // ─────────────────────────────────────────────────────────
   Widget _buildManageOrders() {
     return _orders.isEmpty
-        ? _emptyState('No orders yet', Icons.receipt_long_outlined)
+        ? _emptyState(t('noOrders'), Icons.receipt_long_outlined)
         : ListView.builder(
             padding: const EdgeInsets.all(16),
             itemCount: _orders.length,
@@ -678,7 +871,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withValues(alpha: 0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],

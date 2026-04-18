@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
-import '../Cart.dart';
+import 'cart.dart';
 
 class ProductDetailScreen extends StatefulWidget {
   final Map<String, String> product;
@@ -154,7 +154,7 @@ class _ProductDetailScreenState extends State<ProductDetailScreen> {
           child: Image.network(
             product['image'] ?? '',
             fit: BoxFit.cover,
-            errorBuilder: (_, __, ___) => Container(
+            errorBuilder: (_, _, _) => Container(
               color: Colors.grey.shade200,
               child: const Icon(Icons.image_not_supported,
                   size: 60, color: Colors.grey),

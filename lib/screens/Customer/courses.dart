@@ -229,10 +229,10 @@ class _CoursesScreenState extends State<CoursesScreen> {
                   padding: const EdgeInsets.symmetric(
                       horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
+                    color: Colors.black.withValues(alpha: 0.06),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                        color: Colors.white.withOpacity(0.5)),
+                        color: Colors.black.withValues(alpha: 0.06)),
                   ),
                   child: const Text(
                     'Browse Products',
@@ -300,7 +300,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _categories.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final cat = _categories[i];
@@ -348,7 +348,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
             child: ListView.separated(
               scrollDirection: Axis.horizontal,
               itemCount: _levels.length,
-              separatorBuilder: (_, __) =>
+              separatorBuilder: (_, _) =>
                   const SizedBox(width: 8),
               itemBuilder: (_, i) {
                 final lvl = _levels[i];
@@ -401,7 +401,7 @@ class _CoursesScreenState extends State<CoursesScreen> {
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.06),
             blurRadius: 6,
             offset: const Offset(0, 2),
           ),
