@@ -1,9 +1,48 @@
 import 'package:flutter/material.dart';
-import 'Customer/login_screen.dart';
-import 'Seller/seller_login.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'auth/phone_auth_screen.dart';
+import 'Seller/seller_dashboard.dart';
+import 'Customer/customer_homescreen.dart';
 
 class LandingScreen extends StatelessWidget {
   const LandingScreen({super.key});
+
+  // Check if user is already logged in and route accordingly
+  Future<void> _handleRoleTap(BuildContext context, String role) async {
+    final user = FirebaseAuth.instance.currentUser;
+
+    if (user != null) {
+      // Already logged in — update role and route directly
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(user.uid)
+          .update({'role': role});
+
+      if (!context.mounted) return;
+      if (role == 'seller') {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const SellerDashboardScreen()),
+              (_) => false,
+        );
+      } else {
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (_) => const CustomerHomeScreen()),
+              (_) => false,
+        );
+      }
+    } else {
+      // Not logged in — go to phone auth with role pre-selected
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => PhoneAuthScreen(preSelectedRole: role),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -16,7 +55,7 @@ class LandingScreen extends StatelessWidget {
             children: [
               const Spacer(flex: 2),
 
-              // ── Logo ────────────────────────────────────
+              // ── Logo ─────────────────────────────────────
               Container(
                 width: 100,
                 height: 100,
@@ -27,7 +66,7 @@ class LandingScreen extends StatelessWidget {
                       color: const Color(0xFF7A9B76), width: 2.5),
                   boxShadow: [
                     BoxShadow(
-                      color: const Color(0xFF7A9B76).withValues(alpha: 0.15),
+                      color: const Color(0xFF7A9B76).withOpacity(0.15),
                       blurRadius: 20,
                       offset: const Offset(0, 6),
                     ),
@@ -38,7 +77,7 @@ class LandingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 24),
 
-              // ── Title ────────────────────────────────────
+              // ── Title ─────────────────────────────────────
               const Text(
                 'Hunarmand',
                 style: TextStyle(
@@ -50,10 +89,7 @@ class LandingScreen extends StatelessWidget {
               const SizedBox(height: 6),
               const Text(
                 'دستکار بازار',
-                style: TextStyle(
-                  fontSize: 18,
-                  color: Color(0xFF7A9B76),
-                ),
+                style: TextStyle(fontSize: 18, color: Color(0xFF7A9B76)),
               ),
               const SizedBox(height: 10),
               const Text(
@@ -64,7 +100,7 @@ class LandingScreen extends StatelessWidget {
 
               const Spacer(flex: 2),
 
-              // ── Section label ─────────────────────────────
+              // ── Section label ──────────────────────────────
               const Align(
                 alignment: Alignment.centerLeft,
                 child: Text(
@@ -78,7 +114,7 @@ class LandingScreen extends StatelessWidget {
               ),
               const SizedBox(height: 14),
 
-              // ── Customer card ─────────────────────────────
+              // ── Customer card ──────────────────────────────
               _RoleCard(
                 icon: Icons.shopping_bag_outlined,
                 title: 'Customer',
@@ -88,17 +124,12 @@ class LandingScreen extends StatelessWidget {
                   'Search by category',
                   'Contact sellers directly',
                 ],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const CustomerLoginScreen(),
-                  ),
-                ),
+                onTap: () => _handleRoleTap(context, 'customer'),
               ),
 
               const SizedBox(height: 14),
 
-              // ── Seller card ───────────────────────────────
+              // ── Seller card ────────────────────────────────
               _RoleCard(
                 icon: Icons.storefront_outlined,
                 title: 'Seller',
@@ -108,17 +139,12 @@ class LandingScreen extends StatelessWidget {
                   'Post training courses',
                   'Track your orders',
                 ],
-                onTap: () => Navigator.push(
-                  context,
-                  MaterialPageRoute(
-                    builder: (_) => const SellerLoginScreen(),
-                  ),
-                ),
+                onTap: () => _handleRoleTap(context, 'seller'),
               ),
 
               const Spacer(flex: 2),
 
-              // ── Footer ────────────────────────────────────
+              // ── Footer ─────────────────────────────────────
               Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: const [
@@ -138,7 +164,7 @@ class LandingScreen extends StatelessWidget {
   }
 }
 
-// ── Reusable role card ────────────────────────────────────────────────────────
+// ── Reusable role card ─────────────────────────────────────────────────────────
 class _RoleCard extends StatelessWidget {
   final IconData icon;
   final String title;
@@ -166,7 +192,7 @@ class _RoleCard extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
+              color: Colors.black.withOpacity(0.06),
               blurRadius: 10,
               offset: const Offset(0, 3),
             ),
@@ -175,7 +201,6 @@ class _RoleCard extends StatelessWidget {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Icon
             Container(
               width: 52,
               height: 52,
@@ -183,33 +208,26 @@ class _RoleCard extends StatelessWidget {
                 color: const Color(0xFFEAF2EA),
                 borderRadius: BorderRadius.circular(14),
               ),
-              child: Icon(icon,
-                  size: 26, color: const Color(0xFF7A9B76)),
+              child: Icon(icon, size: 26, color: const Color(0xFF7A9B76)),
             ),
             const SizedBox(width: 16),
-
-            // Text content
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: Colors.black87,
-                    ),
-                  ),
+                  Text(title,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      )),
                   const SizedBox(height: 3),
-                  Text(
-                    subtitle,
-                    style: const TextStyle(
-                        fontSize: 13, color: Colors.black54),
-                  ),
+                  Text(subtitle,
+                      style: const TextStyle(
+                          fontSize: 13, color: Colors.black54)),
                   const SizedBox(height: 10),
                   ...bullets.map(
-                    (b) => Padding(
+                        (b) => Padding(
                       padding: const EdgeInsets.only(bottom: 4),
                       child: Row(
                         children: [
@@ -222,11 +240,9 @@ class _RoleCard extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 8),
-                          Text(
-                            b,
-                            style: const TextStyle(
-                                fontSize: 12, color: Colors.black54),
-                          ),
+                          Text(b,
+                              style: const TextStyle(
+                                  fontSize: 12, color: Colors.black54)),
                         ],
                       ),
                     ),
@@ -234,10 +250,7 @@ class _RoleCard extends StatelessWidget {
                 ],
               ),
             ),
-
-            // Arrow
-            const Icon(Icons.arrow_forward_ios,
-                size: 16, color: Colors.grey),
+            const Icon(Icons.arrow_forward_ios, size: 16, color: Colors.grey),
           ],
         ),
       ),

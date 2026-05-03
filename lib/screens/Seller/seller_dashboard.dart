@@ -1,74 +1,20 @@
 import 'package:flutter/material.dart';
-import '../landing_screen.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import '../../services/product_service.dart';
+import '../../services/order_service.dart';
+import '../../services/course_service.dart';
+import '../Customer/customer_homescreen.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Simple in-memory data models
-// ─────────────────────────────────────────────────────────────────────────────
-
-class SellerProduct {
-  String name;
-  String category;
-  String price;
-  String description;
-  String imageUrl;
-
-  SellerProduct({
-    required this.name,
-    required this.category,
-    required this.price,
-    required this.description,
-    this.imageUrl = '',
-  });
-}
-
-class SellerCourse {
-  String title;
-  String category;
-  String level;
-  String description;
-  String fee;
-  String duration;
-  String schedule;
-  String maxStudents;
-
-  SellerCourse({
-    required this.title,
-    required this.category,
-    required this.level,
-    required this.description,
-    required this.fee,
-    required this.duration,
-    required this.schedule,
-    required this.maxStudents,
-  });
-}
-
-class SellerOrder {
-  final String product;
-  final String customer;
-  final String price;
-  final String date;
-  String status;
-
-  SellerOrder({
-    required this.product,
-    required this.customer,
-    required this.price,
-    required this.date,
-    this.status = 'Pending',
-  });
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Seller Dashboard Screen
+// Seller Dashboard Screen — Firebase Wired
 // ─────────────────────────────────────────────────────────────────────────────
 
 class SellerDashboardScreen extends StatefulWidget {
   const SellerDashboardScreen({super.key});
 
   @override
-  State<SellerDashboardScreen> createState() =>
-      _SellerDashboardScreenState();
+  State<SellerDashboardScreen> createState() => _SellerDashboardScreenState();
 }
 
 class _SellerDashboardScreenState extends State<SellerDashboardScreen>
@@ -76,6 +22,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   late TabController _tabController;
   String _selectedLanguage = 'English';
   bool _showLanguageDropdown = false;
+
+  // Current logged in seller
+  final String _sellerUid = FirebaseAuth.instance.currentUser!.uid;
+  String _sellerName = '';
 
   // ── Translations ─────────────────────────────────────────
   static const Map<String, Map<String, String>> _tr = {
@@ -166,71 +116,25 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
 
   bool get isRtl =>
       _selectedLanguage == 'Urdu' ||
-      _selectedLanguage == 'Sindhi' ||
-      _selectedLanguage == 'Punjabi';
-
-  // Sample data
-  final List<SellerProduct> _products = [
-    SellerProduct(
-      name: 'Embroidered Shawl',
-      category: 'Textiles',
-      price: '3500',
-      description: 'Beautiful handmade shawl with traditional embroidery patterns',
-      imageUrl: 'https://images.unsplash.com/photo-1558618666-fcd25c85cd64?w=400',
-    ),
-    SellerProduct(
-      name: 'Embroidered Cushion',
-      category: 'Textiles',
-      price: '800',
-      description: 'Handcrafted cushion cover with floral embroidery',
-      imageUrl: 'https://images.unsplash.com/photo-1597843786411-a7fa8ad44a95?w=400',
-    ),
-  ];
-
-  final List<SellerCourse> _courses = [
-    SellerCourse(
-      title: 'Traditional Embroidery Workshop',
-      category: 'Embroidery',
-      level: 'Beginner',
-      description:
-          'Learn the art of traditional embroidery techniques passed down through generations. Perfect for beginners who want to create beautiful handcrafted textiles.',
-      fee: '5000',
-      duration: '4 weeks',
-      schedule: 'Every Saturday, 2:00 PM - 4:00 PM',
-      maxStudents: '10',
-    ),
-    SellerCourse(
-      title: 'Advanced Phulkari Workshop',
-      category: 'Embroidery',
-      level: 'Advanced',
-      description:
-          'Master the intricate Phulkari embroidery style from Punjab. Create stunning dupattас and shawls.',
-      fee: '7000',
-      duration: '6 weeks',
-      schedule: 'Every Sunday, 10:00 AM - 1:00 PM',
-      maxStudents: '6',
-    ),
-  ];
-
-  final List<SellerOrder> _orders = [
-    SellerOrder(
-      product: 'Embroidered Cushion',
-      customer: 'Ayesha Khan',
-      price: 'Rs. 800',
-      date: '18 Apr 2025',
-      status: 'Pending',
-    ),
-  ];
-
-  int get _totalRevenue => _products.fold(
-        0,
-        (sum, p) => sum + (int.tryParse(p.price) ?? 0),
-      );
+          _selectedLanguage == 'Sindhi' ||
+          _selectedLanguage == 'Punjabi';
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    _loadSellerName();
+  }
+
+  // Load seller name from Firestore
+  Future<void> _loadSellerName() async {
+    final doc = await FirebaseFirestore.instance
+        .collection('users')
+        .doc(_sellerUid)
+        .get();
+    if (doc.exists && mounted) {
+      setState(() => _sellerName = doc.data()?['name'] ?? '');
+    }
   }
 
   @override
@@ -268,8 +172,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
               ),
               if (_showLanguageDropdown)
                 GestureDetector(
-                  onTap: () =>
-                      setState(() => _showLanguageDropdown = false),
+                  onTap: () => setState(() => _showLanguageDropdown = false),
                   child: Container(color: Colors.transparent),
                 ),
               if (_showLanguageDropdown)
@@ -316,11 +219,10 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                   padding: const EdgeInsets.symmetric(
                       horizontal: 20, vertical: 12),
                   color: isSelected
-                      ? const Color(0xFF7A9B76).withValues(alpha: 0.1)
+                      ? const Color(0xFF7A9B76).withOpacity(0.1)
                       : Colors.transparent,
                   child: Row(
-                    mainAxisAlignment:
-                        MainAxisAlignment.spaceBetween,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(lang['key']!,
                           style: TextStyle(
@@ -377,39 +279,51 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                         color: Colors.white,
                         fontWeight: FontWeight.bold,
                         fontSize: 16)),
-                Text(t('subtitle'),
-                    style:
-                        const TextStyle(color: Colors.white70, fontSize: 11)),
+                Text(
+                  _sellerName.isNotEmpty
+                      ? _sellerName
+                      : t('subtitle'),
+                  style: const TextStyle(
+                      color: Colors.white70, fontSize: 11),
+                ),
               ],
             ),
           ),
           GestureDetector(
-            onTap: () => setState(
-                () => _showLanguageDropdown = !_showLanguageDropdown),
+            onTap: () =>
+                setState(() => _showLanguageDropdown = !_showLanguageDropdown),
             child: Container(
               padding: const EdgeInsets.all(6),
               decoration: BoxDecoration(
                 color: _selectedLanguage != 'English'
-                    ? Colors.white.withValues(alpha: 0.25)
+                    ? Colors.white.withOpacity(0.25)
                     : Colors.transparent,
                 borderRadius: BorderRadius.circular(8),
               ),
-              child: const Icon(Icons.translate,
-                  color: Colors.white, size: 20),
+              child: const Icon(Icons.translate, color: Colors.white, size: 20),
             ),
           ),
           const SizedBox(width: 8),
+          // Sign out button
           GestureDetector(
-            onTap: () => Navigator.pushAndRemoveUntil(
-              context,
-              MaterialPageRoute(
-                builder: (_) => const LandingScreen(),
-              ),
-              (route) => false,
-            ),
+            onTap: () async {
+              final uid = FirebaseAuth.instance.currentUser!.uid;
+              await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(uid)
+                  .update({'role': 'customer'});
+              if (!mounted) return;
+              Navigator.pushAndRemoveUntil(
+                context,
+                MaterialPageRoute(
+                  builder: (_) => const CustomerHomeScreen(),
+                ),
+                    (_) => false,
+              );
+            },
             child: Container(
               padding:
-                  const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+              const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(20),
@@ -429,24 +343,52 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
     );
   }
 
-  // ── Stats ────────────────────────────────────────────────
+  // ── Stats — Live from Firestore ──────────────────────────
   Widget _buildStatsRow() {
-    return Container(
-      color: Colors.white,
-      padding: const EdgeInsets.all(12),
-      child: Column(
-        children: [
-          _statTile(t('totalProducts'), '${_products.length}',
-              Icons.inventory_2_outlined),
-          const SizedBox(height: 8),
-          _statTile(t('pendingOrders'),
-              '${_orders.where((o) => o.status == 'Pending').length}',
-              Icons.shopping_cart_outlined),
-          const SizedBox(height: 8),
-          _statTile(
-              t('totalRevenue'), 'Rs. $_totalRevenue', Icons.attach_money),
-        ],
-      ),
+    return StreamBuilder<QuerySnapshot>(
+      stream: ProductService.getSellerProducts(_sellerUid),
+      builder: (context, productSnap) {
+        final productCount = productSnap.data?.docs.length ?? 0;
+
+        return StreamBuilder<QuerySnapshot>(
+          stream: OrderService.getSellerOrders(_sellerUid),
+          builder: (context, orderSnap) {
+            final orders = orderSnap.data?.docs ?? [];
+            final pendingCount = orders
+                .where((o) =>
+            (o.data() as Map<String, dynamic>)['status'] == 'pending')
+                .length;
+            final totalRevenue = orders
+                .where((o) => ['confirmed', 'completed'].contains(
+                (o.data() as Map<String, dynamic>)['status']))
+                .fold<double>(
+                0,
+                    (sum, o) =>
+                sum +
+                    ((o.data() as Map<String, dynamic>)['productPrice']
+                    as num)
+                        .toDouble());
+
+            return Container(
+              color: Colors.white,
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                children: [
+                  _statTile(t('totalProducts'), '$productCount',
+                      Icons.inventory_2_outlined),
+                  const SizedBox(height: 8),
+                  _statTile(t('pendingOrders'), '$pendingCount',
+                      Icons.shopping_cart_outlined),
+                  const SizedBox(height: 8),
+                  _statTile(t('totalRevenue'),
+                      'Rs. ${totalRevenue.toStringAsFixed(0)}',
+                      Icons.attach_money),
+                ],
+              ),
+            );
+          },
+        );
+      },
     );
   }
 
@@ -464,8 +406,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(label,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.grey)),
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const SizedBox(height: 2),
               Text(value,
                   style: const TextStyle(
@@ -490,8 +431,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         unselectedLabelColor: Colors.grey,
         indicatorColor: const Color(0xFF7A9B76),
         indicatorWeight: 2,
-        labelStyle: const TextStyle(
-            fontSize: 13, fontWeight: FontWeight.w600),
+        labelStyle:
+        const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
         unselectedLabelStyle: const TextStyle(fontSize: 13),
         tabs: [
           Tab(text: t('manageProducts')),
@@ -503,7 +444,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   }
 
   // ─────────────────────────────────────────────────────────
-  // TAB 1 — Manage Products
+  // TAB 1 — Manage Products (Live Firestore)
   // ─────────────────────────────────────────────────────────
   Widget _buildManageProducts() {
     return Column(
@@ -519,7 +460,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
               ElevatedButton.icon(
                 onPressed: () => _openAddProductSheet(),
                 icon: const Icon(Icons.add, size: 16),
-                label: Text(t('addProduct').replaceFirst('+ ', ''),
+                label: Text('Add Product',
                     style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7A9B76),
@@ -535,20 +476,32 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           ),
         ),
         Expanded(
-          child: _products.isEmpty
-              ? _emptyState(t('noProducts'), Icons.inventory_2_outlined)
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: _products.length,
-                  itemBuilder: (_, i) =>
-                      _buildProductCard(_products[i], i),
-                ),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: ProductService.getSellerProducts(_sellerUid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _emptyState(t('noProducts'), Icons.inventory_2_outlined);
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (_, i) {
+                  final doc = snapshot.data!.docs[i];
+                  final data = doc.data() as Map<String, dynamic>;
+                  return _buildProductCard(data, doc.id);
+                },
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildProductCard(SellerProduct p, int index) {
+  Widget _buildProductCard(Map<String, dynamic> p, String docId) {
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
       decoration: BoxDecoration(
@@ -556,7 +509,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],
@@ -566,13 +519,12 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         children: [
           ClipRRect(
             borderRadius:
-                const BorderRadius.vertical(top: Radius.circular(14)),
+            const BorderRadius.vertical(top: Radius.circular(14)),
             child: AspectRatio(
               aspectRatio: 2.2,
-              child: p.imageUrl.isNotEmpty
-                  ? Image.network(p.imageUrl, fit: BoxFit.cover,
-                      errorBuilder: (_, _, _) =>
-                          _imagePlaceholder())
+              child: (p['imageUrl'] as String).isNotEmpty
+                  ? Image.network(p['imageUrl'], fit: BoxFit.cover,
+                  errorBuilder: (_, __, ___) => _imagePlaceholder())
                   : _imagePlaceholder(),
             ),
           ),
@@ -581,17 +533,17 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(p.name,
+                Text(p['title'] ?? '',
                     style: const TextStyle(
                         fontSize: 16, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
-                Text(p.description,
+                Text(p['description'] ?? '',
                     style: const TextStyle(
                         fontSize: 12, color: Colors.black54),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis),
                 const SizedBox(height: 8),
-                Text('Rs. ${p.price}',
+                Text('Rs. ${p['price']}',
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.w600,
@@ -602,7 +554,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () =>
-                            _openAddProductSheet(existing: p, index: index),
+                            _openAddProductSheet(existing: p, docId: docId),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.black87,
                           side: BorderSide(color: Colors.grey.shade300),
@@ -616,9 +568,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     Expanded(
                       child: OutlinedButton(
                         onPressed: () => _confirmDelete(
-                          title: p.name,
+                          title: p['title'] ?? '',
                           onConfirm: () =>
-                              setState(() => _products.removeAt(index)),
+                              ProductService.deleteProduct(docId),
                         ),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.redAccent,
@@ -640,7 +592,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   }
 
   // ─────────────────────────────────────────────────────────
-  // TAB 2 — Manage Courses
+  // TAB 2 — Manage Courses (Live Firestore)
   // ─────────────────────────────────────────────────────────
   Widget _buildManageCourses() {
     return Column(
@@ -656,7 +608,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
               ElevatedButton.icon(
                 onPressed: () => _openAddCourseSheet(),
                 icon: const Icon(Icons.add, size: 16),
-                label: Text(t('addCourse').replaceFirst('+ ', ''),
+                label: Text('Add Course',
                     style: const TextStyle(fontSize: 13)),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF7A9B76),
@@ -672,23 +624,36 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           ),
         ),
         Expanded(
-          child: _courses.isEmpty
-              ? _emptyState(t('noCourses'), Icons.school_outlined)
-              : ListView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                  itemCount: _courses.length,
-                  itemBuilder: (_, i) =>
-                      _buildCourseCard(_courses[i], i),
-                ),
+          child: StreamBuilder<QuerySnapshot>(
+            stream: CourseService.getSellerCourses(_sellerUid),
+            builder: (context, snapshot) {
+              if (snapshot.connectionState == ConnectionState.waiting) {
+                return const Center(child: CircularProgressIndicator());
+              }
+              if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                return _emptyState(t('noCourses'), Icons.school_outlined);
+              }
+              return ListView.builder(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                itemCount: snapshot.data!.docs.length,
+                itemBuilder: (_, i) {
+                  final doc = snapshot.data!.docs[i];
+                  final data = doc.data() as Map<String, dynamic>;
+                  return _buildCourseCard(data, doc.id);
+                },
+              );
+            },
+          ),
         ),
       ],
     );
   }
 
-  Widget _buildCourseCard(SellerCourse c, int index) {
+  Widget _buildCourseCard(Map<String, dynamic> c, String docId) {
+    final level = c['level'] ?? 'Beginner';
     Color levelColor;
     Color levelText;
-    switch (c.level) {
+    switch (level) {
       case 'Intermediate':
         levelColor = const Color(0xFFFFF3CD);
         levelText = const Color(0xFF856404);
@@ -710,7 +675,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],
@@ -721,26 +686,24 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           Row(
             children: [
               Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 4),
+                padding:
+                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
                   color: levelColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(c.level,
+                child: Text(level,
                     style: TextStyle(
                         fontSize: 11,
                         color: levelText,
                         fontWeight: FontWeight.w600)),
               ),
               const SizedBox(width: 8),
-              Text(c.category,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.grey)),
+              Text(c['skill'] ?? '',
+                  style: const TextStyle(fontSize: 12, color: Colors.grey)),
               const Spacer(),
-              Text('Course Fee',
-                  style: const TextStyle(
-                      fontSize: 11, color: Colors.grey)),
+              const Text('Course Fee',
+                  style: TextStyle(fontSize: 11, color: Colors.grey)),
             ],
           ),
           const SizedBox(height: 4),
@@ -748,13 +711,13 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Expanded(
-                child: Text(c.title,
+                child: Text(c['title'] ?? '',
                     style: const TextStyle(
                         fontSize: 15,
                         fontWeight: FontWeight.bold,
                         color: Colors.black87)),
               ),
-              Text('Rs. ${c.fee}',
+              Text('Rs. ${c['fee'] ?? 0}',
                   style: const TextStyle(
                       fontSize: 15,
                       fontWeight: FontWeight.bold,
@@ -762,65 +725,33 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             ],
           ),
           const SizedBox(height: 6),
-          Text(c.description,
+          Text(c['description'] ?? '',
               style: const TextStyle(
                   fontSize: 12, color: Colors.black54, height: 1.4),
               maxLines: 4,
               overflow: TextOverflow.ellipsis),
-          const SizedBox(height: 10),
-          Row(
-            children: [
-              const Icon(Icons.access_time_outlined,
-                  size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text(c.duration,
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.black54)),
-              const SizedBox(width: 16),
-              const Icon(Icons.people_outline,
-                  size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
-              Text('${c.maxStudents} students',
-                  style: const TextStyle(
-                      fontSize: 12, color: Colors.black54)),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Row(
-            children: [
-              const Icon(Icons.calendar_today_outlined,
-                  size: 14, color: Colors.grey),
-              const SizedBox(width: 4),
-              Expanded(
-                child: Text(c.schedule,
-                    style: const TextStyle(
-                        fontSize: 12, color: Colors.black54)),
-              ),
-            ],
-          ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
                 child: OutlinedButton(
                   onPressed: () =>
-                      _openAddCourseSheet(existing: c, index: index),
+                      _openAddCourseSheet(existing: c, docId: docId),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.black87,
                     side: BorderSide(color: Colors.grey.shade300),
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Edit'),
+                  child: Text(t('edit')),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => _confirmDelete(
-                    title: c.title,
-                    onConfirm: () =>
-                        setState(() => _courses.removeAt(index)),
+                    title: c['title'] ?? '',
+                    onConfirm: () => CourseService.deleteCourse(docId),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: Colors.redAccent,
@@ -828,7 +759,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(8)),
                   ),
-                  child: const Text('Delete'),
+                  child: Text(t('delete')),
                 ),
               ),
             ],
@@ -839,29 +770,43 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   }
 
   // ─────────────────────────────────────────────────────────
-  // TAB 3 — Manage Orders
+  // TAB 3 — Manage Orders (Live Firestore)
   // ─────────────────────────────────────────────────────────
   Widget _buildManageOrders() {
-    return _orders.isEmpty
-        ? _emptyState(t('noOrders'), Icons.receipt_long_outlined)
-        : ListView.builder(
-            padding: const EdgeInsets.all(16),
-            itemCount: _orders.length,
-            itemBuilder: (_, i) => _buildOrderCard(_orders[i], i),
-          );
+    return StreamBuilder<QuerySnapshot>(
+      stream: OrderService.getSellerOrders(_sellerUid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+          return _emptyState(t('noOrders'), Icons.receipt_long_outlined);
+        }
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: snapshot.data!.docs.length,
+          itemBuilder: (_, i) {
+            final doc = snapshot.data!.docs[i];
+            final data = doc.data() as Map<String, dynamic>;
+            return _buildOrderCard(data, doc.id);
+          },
+        );
+      },
+    );
   }
 
-  Widget _buildOrderCard(SellerOrder o, int index) {
-    final statusColor = o.status == 'Pending'
+  Widget _buildOrderCard(Map<String, dynamic> o, String docId) {
+    final status = o['status'] ?? 'pending';
+    final statusColor = status == 'pending'
         ? const Color(0xFFFFF3CD)
-        : o.status == 'Completed'
-            ? const Color(0xFFD4EDDA)
-            : const Color(0xFFF8D7DA);
-    final statusText = o.status == 'Pending'
+        : status == 'completed'
+        ? const Color(0xFFD4EDDA)
+        : const Color(0xFFF8D7DA);
+    final statusText = status == 'pending'
         ? const Color(0xFF856404)
-        : o.status == 'Completed'
-            ? const Color(0xFF3D8B5E)
-            : const Color(0xFF842029);
+        : status == 'completed'
+        ? const Color(0xFF3D8B5E)
+        : const Color(0xFF842029);
 
     return Container(
       margin: const EdgeInsets.only(bottom: 14),
@@ -871,7 +816,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
         borderRadius: BorderRadius.circular(14),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withValues(alpha: 0.05),
+              color: Colors.black.withOpacity(0.05),
               blurRadius: 6,
               offset: const Offset(0, 2))
         ],
@@ -882,7 +827,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(o.product,
+              Text(o['productTitle'] ?? '',
                   style: const TextStyle(
                       fontSize: 15, fontWeight: FontWeight.bold)),
               Container(
@@ -892,7 +837,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                   color: statusColor,
                   borderRadius: BorderRadius.circular(20),
                 ),
-                child: Text(o.status,
+                child: Text(status,
                     style: TextStyle(
                         fontSize: 11,
                         color: statusText,
@@ -901,45 +846,42 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
             ],
           ),
           const SizedBox(height: 6),
-          Text('Customer: ${o.customer}',
-              style: const TextStyle(
-                  fontSize: 13, color: Colors.black54)),
-          Text('Date: ${o.date}',
-              style: const TextStyle(
-                  fontSize: 13, color: Colors.black54)),
+          Text('Customer: ${o['customerName'] ?? ''}',
+              style: const TextStyle(fontSize: 13, color: Colors.black54)),
+          Text('Phone: ${o['customerPhone'] ?? ''}',
+              style: const TextStyle(fontSize: 13, color: Colors.black54)),
           const SizedBox(height: 8),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(o.price,
+              Text('Rs. ${o['productPrice'] ?? 0}',
                   style: const TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,
                       color: Color(0xFF7A9B76))),
-              // Status toggle
               Row(
-                children: ['Pending', 'Completed', 'Cancelled']
+                children: ['pending', 'completed', 'cancelled']
                     .map((s) => GestureDetector(
-                          onTap: () =>
-                              setState(() => _orders[index].status = s),
-                          child: Container(
-                            margin: const EdgeInsets.only(left: 6),
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: o.status == s
-                                  ? const Color(0xFF7A9B76)
-                                  : Colors.grey.shade100,
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(s,
-                                style: TextStyle(
-                                    fontSize: 10,
-                                    color: o.status == s
-                                        ? Colors.white
-                                        : Colors.grey)),
-                          ),
-                        ))
+                  onTap: () =>
+                      OrderService.updateOrderStatus(docId, s),
+                  child: Container(
+                    margin: const EdgeInsets.only(left: 6),
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: status == s
+                          ? const Color(0xFF7A9B76)
+                          : Colors.grey.shade100,
+                      borderRadius: BorderRadius.circular(6),
+                    ),
+                    child: Text(s,
+                        style: TextStyle(
+                            fontSize: 10,
+                            color: status == s
+                                ? Colors.white
+                                : Colors.grey)),
+                  ),
+                ))
                     .toList(),
               ),
             ],
@@ -952,84 +894,53 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   // ─────────────────────────────────────────────────────────
   // Add / Edit Product Bottom Sheet
   // ─────────────────────────────────────────────────────────
-  void _openAddProductSheet({SellerProduct? existing, int? index}) {
+  void _openAddProductSheet(
+      {Map<String, dynamic>? existing, String? docId}) {
     final nameCtrl =
-        TextEditingController(text: existing?.name ?? '');
+    TextEditingController(text: existing?['title'] ?? '');
     final catCtrl =
-        TextEditingController(text: existing?.category ?? '');
+    TextEditingController(text: existing?['category'] ?? '');
     final priceCtrl =
-        TextEditingController(text: existing?.price ?? '');
+    TextEditingController(text: existing?['price']?.toString() ?? '');
     final descCtrl =
-        TextEditingController(text: existing?.description ?? '');
+    TextEditingController(text: existing?['description'] ?? '');
+    final imageCtrl =
+    TextEditingController(text: existing?['imageUrl'] ?? '');
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => Padding(
         padding: EdgeInsets.only(
-          bottom: MediaQuery.of(context).viewInsets.bottom,
-        ),
+            bottom: MediaQuery.of(context).viewInsets.bottom),
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Handle
               Center(
                 child: Container(
-                  width: 40,
-                  height: 4,
+                  width: 40, height: 4,
                   decoration: BoxDecoration(
-                    color: Colors.grey.shade300,
-                    borderRadius: BorderRadius.circular(2),
-                  ),
+                      color: Colors.grey.shade300,
+                      borderRadius: BorderRadius.circular(2)),
                 ),
               ),
               const SizedBox(height: 20),
-              Text(
-                existing == null
-                    ? 'Add New Product'
-                    : 'Edit Product',
-                style: const TextStyle(
-                    fontSize: 20, fontWeight: FontWeight.bold),
-              ),
+              Text(existing == null ? 'Add New Product' : 'Edit Product',
+                  style: const TextStyle(
+                      fontSize: 20, fontWeight: FontWeight.bold)),
               const SizedBox(height: 20),
 
-              // Image upload placeholder
-              Container(
-                width: double.infinity,
-                height: 130,
-                decoration: BoxDecoration(
-                  border: Border.all(
-                      color: Colors.grey.shade300,
-                      style: BorderStyle.solid),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.grey.shade50,
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: const [
-                    Icon(Icons.upload_outlined,
-                        size: 32, color: Colors.grey),
-                    SizedBox(height: 8),
-                    Text('Click to upload image',
-                        style: TextStyle(
-                            color: Colors.grey, fontSize: 13)),
-                    Text('PNG, JPG up to 5MB',
-                        style: TextStyle(
-                            color: Colors.grey, fontSize: 11)),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 16),
+              _formLabel('Image URL (optional)'),
+              _formField(imageCtrl, hint: 'https://...'),
+              const SizedBox(height: 14),
 
               _formLabel('Product Name *'),
-              _formField(nameCtrl,
-                  hint: 'e.g., Embroidered Shawl'),
+              _formField(nameCtrl, hint: 'e.g., Embroidered Shawl'),
               const SizedBox(height: 14),
 
               _formLabel('Category *'),
@@ -1044,42 +955,48 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
 
               _formLabel('Description *'),
               _formField(descCtrl,
-                  hint: 'Describe your product...',
-                  maxLines: 3),
+                  hint: 'Describe your product...', maxLines: 3),
               const SizedBox(height: 24),
 
               SizedBox(
                 width: double.infinity,
                 height: 50,
                 child: ElevatedButton(
-                  onPressed: () {
-                    if (nameCtrl.text.isEmpty ||
-                        priceCtrl.text.isEmpty) {
+                  onPressed: () async {
+                    if (nameCtrl.text.isEmpty || priceCtrl.text.isEmpty) {
                       ScaffoldMessenger.of(context).showSnackBar(
                         const SnackBar(
-                          content:
-                              Text('Please fill all required fields'),
+                          content: Text('Please fill all required fields'),
                           backgroundColor: Colors.redAccent,
                         ),
                       );
                       return;
                     }
-                    setState(() {
-                      if (existing != null && index != null) {
-                        _products[index]
-                          ..name = nameCtrl.text
-                          ..category = catCtrl.text
-                          ..price = priceCtrl.text
-                          ..description = descCtrl.text;
-                      } else {
-                        _products.add(SellerProduct(
-                          name: nameCtrl.text,
-                          category: catCtrl.text,
-                          price: priceCtrl.text,
-                          description: descCtrl.text,
-                        ));
-                      }
-                    });
+
+                    if (existing != null && docId != null) {
+                      // Update existing product
+                      await ProductService.updateProduct(
+                        docId,
+                        title: nameCtrl.text,
+                        category: catCtrl.text,
+                        price: double.tryParse(priceCtrl.text) ?? 0,
+                        description: descCtrl.text,
+                        imageUrl: imageCtrl.text,
+                      );
+                    } else {
+                      // Add new product
+                      await ProductService.addProduct(
+                        sellerUid: _sellerUid,
+                        sellerName: _sellerName,
+                        title: nameCtrl.text,
+                        category: catCtrl.text,
+                        price: double.tryParse(priceCtrl.text) ?? 0,
+                        description: descCtrl.text,
+                        imageUrl: imageCtrl.text,
+                      );
+                    }
+
+                    if (!mounted) return;
                     Navigator.pop(context);
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
@@ -1101,12 +1018,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     elevation: 0,
                   ),
                   child: Text(
-                    existing == null
-                        ? 'Add Product'
-                        : 'Save Changes',
+                    existing == null ? 'Add Product' : 'Save Changes',
                     style: const TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w600),
+                        fontSize: 16, fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
@@ -1121,35 +1035,30 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   // ─────────────────────────────────────────────────────────
   // Add / Edit Course Bottom Sheet
   // ─────────────────────────────────────────────────────────
-  void _openAddCourseSheet({SellerCourse? existing, int? index}) {
+  void _openAddCourseSheet(
+      {Map<String, dynamic>? existing, String? docId}) {
     final titleCtrl =
-        TextEditingController(text: existing?.title ?? '');
-    final catCtrl =
-        TextEditingController(text: existing?.category ?? '');
+    TextEditingController(text: existing?['title'] ?? '');
+    final skillCtrl =
+    TextEditingController(text: existing?['skill'] ?? '');
     final descCtrl =
-        TextEditingController(text: existing?.description ?? '');
+    TextEditingController(text: existing?['description'] ?? '');
     final feeCtrl =
-        TextEditingController(text: existing?.fee ?? '');
-    final durationCtrl =
-        TextEditingController(text: existing?.duration ?? '');
-    final scheduleCtrl =
-        TextEditingController(text: existing?.schedule ?? '');
-    final maxCtrl =
-        TextEditingController(text: existing?.maxStudents ?? '');
-    String selectedLevel = existing?.level ?? 'Beginner';
+    TextEditingController(text: existing?['fee']?.toString() ?? '');
+    final cityCtrl =
+    TextEditingController(text: existing?['city'] ?? '');
+    String selectedLevel = existing?['level'] ?? 'Beginner';
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.white,
       shape: const RoundedRectangleBorder(
-          borderRadius:
-              BorderRadius.vertical(top: Radius.circular(20))),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(20))),
       builder: (_) => StatefulBuilder(
         builder: (ctx, setModalState) => Padding(
           padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-          ),
+              bottom: MediaQuery.of(context).viewInsets.bottom),
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Column(
@@ -1157,20 +1066,16 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
               children: [
                 Center(
                   child: Container(
-                    width: 40,
-                    height: 4,
+                    width: 40, height: 4,
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+                        color: Colors.grey.shade300,
+                        borderRadius: BorderRadius.circular(2)),
                   ),
                 ),
                 const SizedBox(height: 20),
-                Text(
-                  existing == null ? 'Add New Course' : 'Edit Course',
-                  style: const TextStyle(
-                      fontSize: 20, fontWeight: FontWeight.bold),
-                ),
+                Text(existing == null ? 'Add New Course' : 'Edit Course',
+                    style: const TextStyle(
+                        fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 20),
 
                 _formLabel('Course Title *'),
@@ -1178,40 +1083,42 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     hint: 'e.g., Traditional Embroidery Workshop'),
                 const SizedBox(height: 14),
 
-                _formLabel('Category *'),
-                _formField(catCtrl, hint: 'e.g., Embroidery'),
+                _formLabel('Skill / Category *'),
+                _formField(skillCtrl, hint: 'e.g., Embroidery'),
+                const SizedBox(height: 14),
+
+                _formLabel('City *'),
+                _formField(cityCtrl, hint: 'e.g., Lahore'),
                 const SizedBox(height: 14),
 
                 _formLabel('Skill Level *'),
                 Row(
                   children: ['Beginner', 'Intermediate', 'Advanced']
                       .map((lvl) => GestureDetector(
-                            onTap: () =>
-                                setModalState(() => selectedLevel = lvl),
-                            child: AnimatedContainer(
-                              duration:
-                                  const Duration(milliseconds: 150),
-                              margin: const EdgeInsets.only(right: 8),
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 14, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: selectedLevel == lvl
-                                    ? const Color(0xFF7A9B76)
-                                    : Colors.grey.shade100,
-                                borderRadius:
-                                    BorderRadius.circular(20),
-                              ),
-                              child: Text(lvl,
-                                  style: TextStyle(
-                                      fontSize: 12,
-                                      color: selectedLevel == lvl
-                                          ? Colors.white
-                                          : Colors.black54,
-                                      fontWeight: selectedLevel == lvl
-                                          ? FontWeight.w600
-                                          : FontWeight.normal)),
-                            ),
-                          ))
+                    onTap: () =>
+                        setModalState(() => selectedLevel = lvl),
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 150),
+                      margin: const EdgeInsets.only(right: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: selectedLevel == lvl
+                            ? const Color(0xFF7A9B76)
+                            : Colors.grey.shade100,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                      child: Text(lvl,
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: selectedLevel == lvl
+                                  ? Colors.white
+                                  : Colors.black54,
+                              fontWeight: selectedLevel == lvl
+                                  ? FontWeight.w600
+                                  : FontWeight.normal)),
+                    ),
+                  ))
                       .toList(),
                 ),
                 const SizedBox(height: 14),
@@ -1221,42 +1128,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                     hint: 'Describe your course...', maxLines: 3),
                 const SizedBox(height: 14),
 
-                Row(
-                  children: [
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _formLabel('Course Fee (Rs.) *'),
-                          _formField(feeCtrl,
-                              hint: '5000',
-                              keyboardType: TextInputType.number),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          _formLabel('Duration *'),
-                          _formField(durationCtrl,
-                              hint: 'e.g., 4 weeks'),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 14),
-
-                _formLabel('Schedule'),
-                _formField(scheduleCtrl,
-                    hint: 'e.g., Every Saturday, 2:00 PM - 4:00 PM'),
-                const SizedBox(height: 14),
-
-                _formLabel('Max Students'),
-                _formField(maxCtrl,
-                    hint: '10',
+                _formLabel('Course Fee (Rs.) *'),
+                _formField(feeCtrl,
+                    hint: '5000',
                     keyboardType: TextInputType.number),
                 const SizedBox(height: 24),
 
@@ -1264,42 +1138,46 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                   width: double.infinity,
                   height: 50,
                   child: ElevatedButton(
-                    onPressed: () {
-                      if (titleCtrl.text.isEmpty ||
-                          feeCtrl.text.isEmpty) {
+                    onPressed: () async {
+                      if (titleCtrl.text.isEmpty || feeCtrl.text.isEmpty) {
                         ScaffoldMessenger.of(context).showSnackBar(
                           const SnackBar(
-                            content: Text(
-                                'Please fill all required fields'),
+                            content:
+                            Text('Please fill all required fields'),
                             backgroundColor: Colors.redAccent,
                           ),
                         );
                         return;
                       }
-                      setState(() {
-                        if (existing != null && index != null) {
-                          _courses[index]
-                            ..title = titleCtrl.text
-                            ..category = catCtrl.text
-                            ..level = selectedLevel
-                            ..description = descCtrl.text
-                            ..fee = feeCtrl.text
-                            ..duration = durationCtrl.text
-                            ..schedule = scheduleCtrl.text
-                            ..maxStudents = maxCtrl.text;
-                        } else {
-                          _courses.add(SellerCourse(
-                            title: titleCtrl.text,
-                            category: catCtrl.text,
-                            level: selectedLevel,
-                            description: descCtrl.text,
-                            fee: feeCtrl.text,
-                            duration: durationCtrl.text,
-                            schedule: scheduleCtrl.text,
-                            maxStudents: maxCtrl.text,
-                          ));
-                        }
-                      });
+
+                      if (existing != null && docId != null) {
+                        // Update
+                        await FirebaseFirestore.instance
+                            .collection('courses')
+                            .doc(docId)
+                            .update({
+                          'title': titleCtrl.text,
+                          'skill': skillCtrl.text,
+                          'level': selectedLevel,
+                          'description': descCtrl.text,
+                          'fee': double.tryParse(feeCtrl.text) ?? 0,
+                          'city': cityCtrl.text,
+                        });
+                      } else {
+                        // Add new course
+                        await CourseService.addCourse(
+                          sellerUid: _sellerUid,
+                          sellerName: _sellerName,
+                          title: titleCtrl.text,
+                          skill: skillCtrl.text,
+                          level: selectedLevel,
+                          description: descCtrl.text,
+                          fee: double.tryParse(feeCtrl.text) ?? 0,
+                          city: cityCtrl.text,
+                        );
+                      }
+
+                      if (!mounted) return;
                       Navigator.pop(context);
                       ScaffoldMessenger.of(context).showSnackBar(
                         SnackBar(
@@ -1309,8 +1187,7 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                           backgroundColor: const Color(0xFF7A9B76),
                           behavior: SnackBarBehavior.floating,
                           shape: RoundedRectangleBorder(
-                              borderRadius:
-                                  BorderRadius.circular(10)),
+                              borderRadius: BorderRadius.circular(10)),
                         ),
                       );
                     },
@@ -1322,12 +1199,9 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
                       elevation: 0,
                     ),
                     child: Text(
-                      existing == null
-                          ? 'Add Course'
-                          : 'Save Changes',
+                      existing == null ? 'Add Course' : 'Save Changes',
                       style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600),
+                          fontSize: 16, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -1348,8 +1222,8 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
     showDialog(
       context: context,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16)),
+        shape:
+        RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
         title: const Text('Confirm Delete'),
         content: Text('Delete "$title"?'),
         actions: [
@@ -1372,28 +1246,27 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
   }
 
   Widget _formLabel(String text) => Padding(
-        padding: const EdgeInsets.only(bottom: 6),
-        child: Text(text,
-            style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w500,
-                color: Colors.black87)),
-      );
+    padding: const EdgeInsets.only(bottom: 6),
+    child: Text(text,
+        style: const TextStyle(
+            fontSize: 13,
+            fontWeight: FontWeight.w500,
+            color: Colors.black87)),
+  );
 
   Widget _formField(
-    TextEditingController ctrl, {
-    String hint = '',
-    int maxLines = 1,
-    TextInputType keyboardType = TextInputType.text,
-  }) =>
+      TextEditingController ctrl, {
+        String hint = '',
+        int maxLines = 1,
+        TextInputType keyboardType = TextInputType.text,
+      }) =>
       TextField(
         controller: ctrl,
         maxLines: maxLines,
         keyboardType: keyboardType,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle:
-              const TextStyle(color: Colors.grey, fontSize: 13),
+          hintStyle: const TextStyle(color: Colors.grey, fontSize: 13),
           filled: true,
           fillColor: Colors.grey.shade50,
           contentPadding: const EdgeInsets.all(14),
@@ -1407,28 +1280,26 @@ class _SellerDashboardScreenState extends State<SellerDashboardScreen>
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(10),
-            borderSide:
-                const BorderSide(color: Color(0xFF7A9B76)),
+            borderSide: const BorderSide(color: Color(0xFF7A9B76)),
           ),
         ),
       );
 
   Widget _imagePlaceholder() => Container(
-        color: Colors.grey.shade200,
-        child: const Icon(Icons.image_not_supported,
-            color: Colors.grey, size: 36),
-      );
+    color: Colors.grey.shade200,
+    child: const Icon(Icons.image_not_supported,
+        color: Colors.grey, size: 36),
+  );
 
   Widget _emptyState(String msg, IconData icon) => Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(icon, size: 64, color: Colors.grey.shade300),
-            const SizedBox(height: 16),
-            Text(msg,
-                style: const TextStyle(
-                    fontSize: 16, color: Colors.grey)),
-          ],
-        ),
-      );
+    child: Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Icon(icon, size: 64, color: Colors.grey.shade300),
+        const SizedBox(height: 16),
+        Text(msg,
+            style: const TextStyle(fontSize: 16, color: Colors.grey)),
+      ],
+    ),
+  );
 }
